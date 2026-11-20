@@ -1,39 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ammora Swap Quote · GIWA Sepolia</title>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ammora Swap · GIWA Testnet</title>
 <style>
-:root{--bg:#0b0e14;--panel:#121722;--line:#1f2736;--text:#e6ebf5;--mut:#8592a8;--acc:#5eead4;--bad:#ff7b7b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:2rem 1rem}
-.wrap{max-width:680px;margin:0 auto}h1{margin:0 0 .2rem}.sub{color:var(--mut);margin-bottom:1.4rem}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.2rem;margin-bottom:1rem}
-label{display:block;font-size:.8rem;color:var(--mut);margin:.7rem 0 .25rem}
-input,select{width:100%;background:#0b0e14;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:.65rem;font-size:.9rem}
-button{background:var(--acc);color:#04201c;border:0;border-radius:8px;padding:.7rem 1.1rem;font-weight:700;cursor:pointer;margin-top:1rem}
-button.ghost{background:transparent;color:var(--acc);border:1px solid var(--acc);margin-top:0}
-.chip{display:inline-block;margin:.2rem .2rem 0 0;padding:.2rem .5rem;font-size:.72rem;font-family:monospace;background:#0b0e14;color:var(--acc);border:1px solid var(--line);border-radius:6px;cursor:pointer}
-pre{background:#0b0e14;border:1px solid var(--line);border-radius:8px;padding:.8rem;overflow:auto;font-size:.78rem;max-height:340px}
-.big{font-size:1.5rem;font-weight:700;color:var(--acc)}.err{color:var(--bad)}.note{font-size:.78rem;color:var(--mut)}
-</style>
-</head>
-<body><div class="wrap">
-<h1>Ammora Swap Quote</h1>
-<div class="sub">Read-only exact-input quotes · GIWA Sepolia testnet · built with @ammora-protocol/sdk</div>
-<div class="card">
-<label>Pool model</label>
-<select id="model"><option>almm</option><option>concentrated</option><option>compounding</option><option>dbc</option></select>
-<label>Pool address</label><input id="pool" placeholder="0x...">
-<label>Token in</label><input id="tin" placeholder="0x...">
-<label>Token out</label><input id="tout" placeholder="0x...">
-<label>Amount in</label><input id="amt" value="1">
-<label>Slippage (bps)</label><input id="slip" value="100">
-<button id="go">Get quote</button>
+:root{--bg:#f5f7fb;--card:#fff;--line:#e6eaf2;--text:#0f172a;--mut:#64748b;--acc:#0ea5a4;--acc2:#3b82f6;--bad:#dc2626;--ok:#16a34a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.5rem;gap:1rem;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.3rem}.logo i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2))}
+nav{display:flex;gap:.3rem}nav button{background:none;border:0;border-bottom:2px solid transparent;padding:.5rem .9rem;font-weight:600;color:var(--mut);cursor:pointer;font-size:.95rem}nav button.on{color:var(--text);border-color:var(--text)}
+.right{display:flex;align-items:center;gap:.6rem}.pill{border:1px solid var(--line);border-radius:99px;padding:.4rem .8rem;font-size:.82rem;display:flex;align-items:center;gap:.4rem}.dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.wbtn{background:#0f172a;color:#fff;border:0;border-radius:99px;padding:.55rem 1.1rem;font-weight:700;cursor:pointer}
+main{max-width:1000px;margin:1.5rem auto;padding:0 1rem}
+.grid{display:grid;grid-template-columns:1fr 380px;gap:1rem;align-items:start}@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.2rem;margin-bottom:1rem}
+h2{margin:0 0 .8rem;font-size:1.1rem}label{display:block;font-size:.78rem;color:var(--mut);margin:.8rem 0 .3rem}
+input,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:.65rem;font-size:.9rem;background:#fff;color:var(--text)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:#eef2f8;border-radius:12px;padding:4px;margin-bottom:1rem}
+.tabs button{border:0;background:none;padding:.6rem;border-radius:9px;font-weight:700;color:var(--mut);cursor:pointer}.tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px #0001}
+.box{border:1px solid var(--line);border-radius:14px;padding:1rem;background:#fafbfd;margin-bottom:.7rem}
+.row{display:flex;justify-content:space-between;font-size:.8rem;color:var(--mut)}
+.amt{border:0;background:none;font-size:1.9rem;font-weight:700;padding:.3rem 0;width:60%;outline:0}
+.tok{font-weight:700;background:#fff;border:1px solid var(--line);border-radius:99px;padding:.35rem .8rem}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.8rem}.chips button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:.5rem;cursor:pointer;font-weight:600}
+.go{width:100%;border:0;border-radius:12px;padding:.9rem;font-weight:800;font-size:1rem;color:#fff;background:linear-gradient(90deg,var(--acc),var(--acc2));cursor:pointer;margin-top:.6rem}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem}.stat b{display:block;font-size:1.05rem}.stat span{font-size:.75rem;color:var(--mut)}
+.chip{display:inline-block;margin:.25rem .25rem 0 0;padding:.25rem .55rem;font-size:.74rem;font-family:monospace;background:#eef2f8;border-radius:6px;cursor:pointer}
+pre{background:#f1f5f9;border-radius:8px;padding:.8rem;overflow:auto;font-size:.75rem;max-height:260px}.err{color:var(--bad);font-size:.85rem}.note{font-size:.76rem;color:var(--mut)}
+.hide{display:none}
+</style></head><body>
+<header>
+<div class="logo"><i></i>Ammora</div>
+<nav><button class="on" data-v="swap">Swap</button><button data-v="explore">Explore</button></nav>
+<div class="right"><div class="pill"><span class="dot"></span>GIWA <span style="color:#64748b">Testnet</span></div><button class="wbtn" id="wbtn">Connect Wallet</button></div>
+</header>
+<main>
+<section id="v-swap"><div class="grid">
+<div>
+<div class="card"><h2>Pool</h2>
+<div class="stats">
+<div class="stat"><b id="s-pair">–</b><span>Pair</span></div>
+<div class="stat"><b id="s-model">almm</b><span>Pool model</span></div>
+<div class="stat"><b>91342</b><span>Chain ID</span></div>
+<div class="stat"><b>SDK 0.3.9</b><span>Quote engine</span></div>
 </div>
-<div class="card"><button class="ghost" id="load">Load launches from Ammora Data API</button>
-<div class="note" style="margin-top:.6rem">Click an address chip to paste it into the last selected field.</div>
-<div id="launches"></div></div>
-<div class="card" id="out" style="display:none"></div>
-<div class="note">Testnet only. No wallet, no transactions, no private keys. Quotes are informational.</div>
-</div><script type="module" src="/src/main.js"></script></body></html>
+<label>Pool model</label><select id="model"><option>almm</option><option>concentrated</option><option>compounding</option><option>dbc</option></select>
+<label>Pool address</label><input id="pool" placeholder="0x...">
+<label>Token A (pay side when buying)</label><input id="ta" placeholder="0x...">
+<label>Token B (receive side when buying)</label><input id="tb" placeholder="0x...">
+<div class="note" style="margin-top:.8rem">Tip: use the Explore tab to copy addresses.</div>
+</div>
+<div class="card hide" id="rawcard"><h2>Raw quote</h2><pre id="raw"></pre></div>
+</div>
+<div class="card">
+<div class="tabs"><button class="on" id="t-buy">Buy</button><button id="t-sell">Sell</button></div>
+<div class="box"><div class="row"><span>You pay</span><span id="bal">Balance –</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><input class="amt" id="amt" placeholder="0" inputmode="decimal"><span class="tok" id="sym-in">–</span></div></div>
+<div class="chips"><button data-a="0.001">0.001</button><button data-a="0.005">0.005</button><button data-a="0.01">0.01</button><button data-a="max">Max</button></div>
+<div class="box"><div class="row"><span>Estimated output</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div class="amt" id="est" style="width:auto">0</div><span class="tok" id="sym-out">–</span></div></div>
+<div class="row" style="margin:.5rem 0"><span>Min. received</span><span id="minr">–</span></div>
+<div class="row" style="margin:.5rem 0;align-items:center"><span>Slippage</span><select id="slip" style="width:auto"><option value="50">0.5%</option><option value="100" selected>1%</option><option value="200">2%</option></select></div>
+<div id="msg" class="err"></div>
+<button class="go" id="go">Connect Wallet</button>
+<div class="note" style="margin-top:.6rem;text-align:center">Quote mode · testnet only · no transactions are sent</div>
+</div>
+</div></section>
+<section id="v-explore" class="hide"><div class="card"><h2>Launches (Ammora Data API)</h2>
+<button class="wbtn" id="load">Load launches</button>
+<div class="note" style="margin-top:.6rem">Click an address to paste it into the last selected field on the Swap tab.</div>
+<div id="launches"></div></div></section>
+</main><script type="module" src="/src/main.js"></script></body></html>
