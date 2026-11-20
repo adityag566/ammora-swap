@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ammora Swap Quote · GIWA Sepolia</title>
+<style>
+:root{--bg:#0b0e14;--panel:#121722;--line:#1f2736;--text:#e6ebf5;--mut:#8592a8;--acc:#5eead4;--bad:#ff7b7b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:2rem 1rem}
+.wrap{max-width:680px;margin:0 auto}h1{margin:0 0 .2rem}.sub{color:var(--mut);margin-bottom:1.4rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.2rem;margin-bottom:1rem}
+label{display:block;font-size:.8rem;color:var(--mut);margin:.7rem 0 .25rem}
+input,select{width:100%;background:#0b0e14;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:.65rem;font-size:.9rem}
+button{background:var(--acc);color:#04201c;border:0;border-radius:8px;padding:.7rem 1.1rem;font-weight:700;cursor:pointer;margin-top:1rem}
+button.ghost{background:transparent;color:var(--acc);border:1px solid var(--acc);margin-top:0}
+.chip{display:inline-block;margin:.2rem .2rem 0 0;padding:.2rem .5rem;font-size:.72rem;font-family:monospace;background:#0b0e14;color:var(--acc);border:1px solid var(--line);border-radius:6px;cursor:pointer}
+pre{background:#0b0e14;border:1px solid var(--line);border-radius:8px;padding:.8rem;overflow:auto;font-size:.78rem;max-height:340px}
+.big{font-size:1.5rem;font-weight:700;color:var(--acc)}.err{color:var(--bad)}.note{font-size:.78rem;color:var(--mut)}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Ammora Swap Quote</h1>
+<div class="sub">Read-only exact-input quotes · GIWA Sepolia testnet · built with @ammora-protocol/sdk</div>
+<div class="card">
+<label>Pool model</label>
+<select id="model"><option>almm</option><option>concentrated</option><option>compounding</option><option>dbc</option></select>
+<label>Pool address</label><input id="pool" placeholder="0x...">
+<label>Token in</label><input id="tin" placeholder="0x...">
+<label>Token out</label><input id="tout" placeholder="0x...">
+<label>Amount in</label><input id="amt" value="1">
+<label>Slippage (bps)</label><input id="slip" value="100">
+<button id="go">Get quote</button>
+</div>
+<div class="card"><button class="ghost" id="load">Load launches from Ammora Data API</button>
+<div class="note" style="margin-top:.6rem">Click an address chip to paste it into the last selected field.</div>
+<div id="launches"></div></div>
+<div class="card" id="out" style="display:none"></div>
+<div class="note">Testnet only. No wallet, no transactions, no private keys. Quotes are informational.</div>
+</div><script type="module" src="/src/main.js"></script></body></html>
