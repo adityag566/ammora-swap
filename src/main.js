@@ -1,5 +1,5 @@
 import {
-  AmmoraRouteClient, AmmoraDataApiClient, resolveAmmoraFinalizedHead,
+  AmmoraRouteClient, resolveAmmoraFinalizedHead,
   giwaSepoliaAutoRoute as route, giwaSepoliaAutoRouteCatalog as routeCatalog,
   giwaSepoliaAutoRouteDeploymentCatalog as deploymentCatalog,
   giwaSepoliaAutoRoutePoolProfiles as factoryProfiles,
@@ -7,6 +7,8 @@ import {
 import { createPublicClient, http, isAddress, parseUnits, formatUnits, erc20Abi } from 'viem';
 
 const $ = (id) => document.getElementById(id);
+const WETH = '0x4200000000000000000000000000000000000006';
+const TAMM = '0x10B3Cc2fc981277Ada576891CF649D0ABA768B06';
 const DEAD = '0x000000000000000000000000000000000000dEaD';
 const CHAIN_HEX = '0x' + (91342).toString(16);
 const rpcUrls = route.rpcUrls?.length ? route.rpcUrls : ['https://sepolia-rpc.giwa.io'];
@@ -14,15 +16,15 @@ const client = createPublicClient({ transport: http(rpcUrls[0]) });
 const json = (o) => JSON.stringify(o, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2);
 const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
 const val = (id) => $(id).value.trim();
-let account = null, side = 'buy', balance = 0n, inMeta = { decimals: 18, symbol: '–' }, timer, last = $('pool');
+const eq = (a, b) => a.toLowerCase() === b.toLowerCase();
+let account = null, side = 'buy', balance = 0n, inMeta = { decimals: 18, symbol: 'ETH' }, timer;
 
-// ---- navigation ----
-document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => {
-  document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('on', x === b));
-  $('v-swap').classList.toggle('hide', b.dataset.v !== 'swap');
-  $('v-explore').classList.toggle('hide', b.dataset.v !== 'explore');
-}));
-document.querySelectorAll('input').forEach((i) => i.addEventListener('focus', () => (last = i)));
+// ---- fixed ETH / tAMM pair ----
+$('ta').value = WETH; $('tb').value = TAMM; $('model').value = 'compounding';
+[$('ta'), $('tb')].forEach((el) => { el.style.display = 'none'; el.previousElementSibling.style.display = 'none'; });
+document.querySelector('nav button[data-v="explore"]').style.display = 'none';
+$('s-pair').textContent = 'ETH / tAMM'; $('sym-in').textContent = 'ETH'; $('sym-out').textContent = 'tAMM';
+$('pool').placeholder = 'tAMM pool address (0x...)';
 
 // ---- wallet ----
 function paintWallet() {
@@ -49,49 +51,54 @@ $('wbtn').onclick = () => (account ? ((account = null), paintWallet()) : connect
 window.ethereum?.on?.('accountsChanged', (a) => { account = a[0] ?? null; paintWallet(); });
 
 // ---- helpers ----
-const pair = () => (side === 'buy' ? { inT: val('ta'), outT: val('tb') } : { inT: val('tb'), outT: val('ta') });
+const pair = () => (side === 'buy' ? { inT: WETH, outT: TAMM } : { inT: TAMM, outT: WETH });
 async function meta(address) {
+  if (eq(address, WETH)) return { decimals: 18, symbol: 'ETH' };
   try {
     const [d, s] = await Promise.all(['decimals', 'symbol'].map((functionName) => client.readContract({ address, abi: erc20Abi, functionName })));
     return { decimals: Number(d), symbol: s };
-  } catch { return { decimals: 18, symbol: '?' }; }
+  } catch { return { decimals: 6, symbol: 'tAMM' }; }
 }
 async function loadBalance() {
   const { inT } = pair();
-  if (!account || !isAddress(inT)) { $('bal').textContent = 'Balance –'; balance = 0n; return; }
+  inMeta = await meta(inT);
+  $('sym-in').textContent = inMeta.symbol;
+  $('sym-out').textContent = side === 'buy' ? 'tAMM' : 'ETH';
+  if (!account) { $('bal').textContent = 'Balance –'; balance = 0n; return; }
   try {
-    balance = await client.readContract({ address: inT, abi: erc20Abi, functionName: 'balanceOf', args: [account] });
+    balance = eq(inT, WETH) ? await client.getBalance({ address: account })
+      : await client.readContract({ address: inT, abi: erc20Abi, functionName: 'balanceOf', args: [account] });
     $('bal').textContent = `Balance ${Number(formatUnits(balance, inMeta.decimals)).toFixed(4)} ${inMeta.symbol}`;
   } catch { $('bal').textContent = 'Balance –'; }
 }
 function setSide(s) {
   side = s;
   $('t-buy').classList.toggle('on', s === 'buy'); $('t-sell').classList.toggle('on', s === 'sell');
-  $('est').textContent = '0'; $('minr').textContent = '–'; quoteSoon();
+  $('est').textContent = '0'; $('minr').textContent = '–'; $('amt').value = '';
+  loadBalance(); quoteSoon();
 }
 $('t-buy').onclick = () => setSide('buy'); $('t-sell').onclick = () => setSide('sell');
 document.querySelectorAll('.chips button').forEach((b) => (b.onclick = () => {
-  $('amt').value = b.dataset.a === 'max' ? formatUnits(balance, inMeta.decimals) : b.dataset.a; quoteSoon();
+  if (b.dataset.a === 'max') {
+    const reserve = eq(pair().inT, WETH) ? 1_000_000_000_000_000n : 0n;
+    $('amt').value = formatUnits(balance > reserve ? balance - reserve : 0n, inMeta.decimals);
+  } else $('amt').value = b.dataset.a;
+  quoteSoon();
 }));
-['amt', 'slip', 'model', 'pool', 'ta', 'tb'].forEach((id) => $(id).addEventListener('input', quoteSoon));
+['amt', 'slip', 'model', 'pool'].forEach((id) => $(id).addEventListener('input', quoteSoon));
 $('go').onclick = () => (account ? doQuote() : connect());
 
 // ---- quote ----
 function quoteSoon() { clearTimeout(timer); timer = setTimeout(doQuote, 600); }
 async function doQuote() {
   const msg = $('msg'); msg.textContent = '';
-  const { inT, outT } = pair();
-  if (!isAddress(val('pool')) || !isAddress(inT) || !isAddress(outT)) return;
+  if (!isAddress(val('pool'))) { msg.textContent = 'Enter the tAMM pool address to get a quote.'; return; }
   const amtText = val('amt');
   if (!amtText || Number(amtText) <= 0) return;
+  const { inT, outT } = pair();
   try {
     $('est').textContent = '…';
     const [mi, mo] = await Promise.all([meta(inT), meta(outT)]);
-    inMeta = mi;
-    $('sym-in').textContent = mi.symbol; $('sym-out').textContent = mo.symbol;
-    $('s-pair').textContent = side === 'buy' ? `${mi.symbol} / ${mo.symbol}` : `${mo.symbol} / ${mi.symbol}`;
-    $('s-model').textContent = val('model');
-    loadBalance();
     const routes = await AmmoraRouteClient.create({
       chainId: route.chainId, rpcUrls, routeCatalog, deploymentCatalog, factoryProfiles,
       pools: [{ model: val('model'), pool: val('pool') }],
@@ -101,25 +108,10 @@ async function doQuote() {
     const big = Object.entries(quote).filter(([, v]) => typeof v === 'bigint');
     const min = big.find(([k]) => /min/i.test(k));
     const est = big.find(([k]) => /out/i.test(k) && !/min/i.test(k));
-    const f = (e) => (e ? `${Number(formatUnits(e[1], mo.decimals)).toLocaleString(undefined, { maximumFractionDigits: 6 })}` : '–');
+    const f = (e) => (e ? Number(formatUnits(e[1], mo.decimals)).toLocaleString(undefined, { maximumFractionDigits: 6 }) : '–');
     $('est').textContent = f(est);
     $('minr').textContent = min ? `${f(min)} ${mo.symbol}` : '–';
     $('raw').textContent = json(quote); $('rawcard').classList.remove('hide');
-  } catch (e) { $('est').textContent = '0'; msg.textContent = String(e?.shortMessage ?? e?.message ?? e).slice(0, 200); }
+  } catch (e) { $('est').textContent = '0'; msg.textContent = String(e?.shortMessage ?? e?.message ?? e).slice(0, 220); }
 }
-
-// ---- explore ----
-$('load').onclick = async () => {
-  const box = $('launches'); box.textContent = 'Loading…';
-  try {
-    const res = await new AmmoraDataApiClient('https://ammora-giwa-sepolia-data.fly.dev').getLaunches({ chainId: 91_342n });
-    const items = Array.isArray(res) ? res : res?.launches ?? res?.items ?? res?.data ?? [];
-    if (!items.length) { box.innerHTML = `<pre>${json(res)}</pre>`; return; }
-    box.innerHTML = items.slice(0, 30).map((it, n) => {
-      const addrs = [...new Set(json(it).match(/0x[a-fA-F0-9]{40}/g) ?? [])];
-      return `<div style="margin-top:.9rem"><b>${it.name ?? it.symbol ?? 'Launch ' + (n + 1)}</b><br>${addrs.map((a) => `<span class="chip" data-a="${a}">${short(a)}</span>`).join('')}</div>`;
-    }).join('');
-    box.querySelectorAll('.chip').forEach((c) => (c.onclick = () => { last.value = c.dataset.a; last.dispatchEvent(new Event('input')); }));
-  } catch (e) { box.innerHTML = `<div class="err">${String(e?.message ?? e)}</div>`; }
-};
 paintWallet();
