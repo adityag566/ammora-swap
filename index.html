@@ -121,9 +121,6 @@ const readOut = (r) => {
 async function getBuyOut(amountIn, from) {
   return readOut(await pub.call({ account: from, to: ROUTER, data: buyData(1n, from, deadline()), value: amountIn, stateOverride: [{ address: from, balance: parseEther('1000000') }] }));
 }
-async function getSellOut(amt, from) {
-  return readOut(await pub.call({ account: from, to: ROUTER, data: sellData(amt, 1n, from, deadline()) }));
-}
 function quoteSoon() { clearTimeout(timer); quote = null; quoted = false; btn(); timer = setTimeout(doQuote, 500); }
 async function doQuote() {
   const my = ++seq, amt = parseIn($('amt').value.trim());
@@ -165,10 +162,9 @@ async function swap() {
         const ar = await pub.waitForTransactionReceipt({ hash: ah });
         if (ar.status !== 'success') throw new Error('Approval failed');
       }
-      const exact = await getSellOut(quote.amt, account);
-      const min = (exact * slipBps()) / 10000n;
+      const min = (quote.min * 90n) / 100n;
       msg('Confirm the swap in your wallet…');
-      hash = await wallet.sendTransaction({ account, chain, to: ROUTER, data: sellData(quote.amt, min, account, deadline()) });
+      hash = await wallet.sendTransaction({ account, chain, to: ROUTER, data: sellData(quote.amt, min, account, deadline()), gas: 500000n });
     }
     msg(`Transaction submitted. Waiting for confirmation… <a href="${EXP}/tx/${hash}" target="_blank" rel="noopener">View ↗</a>`);
     const rc = await pub.waitForTransactionReceipt({ hash });
