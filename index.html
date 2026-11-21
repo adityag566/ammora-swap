@@ -17,16 +17,16 @@ main{max-width:1040px;margin:1.5rem auto;padding:0 1rem;display:grid;grid-templa
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.3rem}@media(max-width:560px){.stats{grid-template-columns:1fr 1fr}}
 .stats span{font-size:.75rem;color:var(--mut)}.stats b{display:block;font-size:1.1rem;margin-top:.2rem}
 .tabs{display:grid;grid-template-columns:1fr 1fr;background:#eef2f8;border-radius:12px;padding:4px;margin-bottom:1rem}
-.tabs button{border:0;background:none;padding:.65rem;border-radius:9px;font-weight:700;color:var(--mut);cursor:pointer;font-size:.95rem}.tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px #0001}
+.tabs button{border:0;background:none;padding:.65rem;border-radius:9px;font-weight:700;color:var(--mut);cursor:pointer;font-size:.95rem}.tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px #0001}.tabs button:disabled{opacity:.5;cursor:not-allowed}
 .box{border:1px solid var(--line);border-radius:14px;padding:1rem;background:#fafbfd;margin-bottom:.7rem}.row{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:var(--mut)}
 .in{display:flex;justify-content:space-between;align-items:center;gap:.5rem}.amt{border:0;background:none;font-size:1.9rem;font-weight:700;width:100%;padding:.35rem 0;outline:0;color:var(--text)}.est{font-size:1.9rem;font-weight:700;padding:.35rem 0;color:var(--text)}
 .tok{font-weight:700;background:#fff;border:1px solid var(--line);border-radius:99px;padding:.4rem .85rem;white-space:nowrap}
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.8rem}.chips button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:.5rem;cursor:pointer;font-weight:600}.chips button:hover{border-color:var(--a)}
 .line{display:flex;justify-content:space-between;font-size:.84rem;margin:.5rem 0;color:var(--mut)}.line b{color:var(--text);font-weight:600}
-select,input.t{border:1px solid var(--line);border-radius:8px;padding:.45rem;font-size:.85rem;background:#fff;color:var(--text)}
+select{border:1px solid var(--line);border-radius:8px;padding:.45rem;font-size:.85rem;background:#fff;color:var(--text)}
 .go{width:100%;border:0;border-radius:13px;padding:.95rem;font-weight:800;font-size:1rem;color:#fff;background:linear-gradient(90deg,var(--a),var(--b));cursor:pointer;margin-top:.7rem}.go:disabled{background:#e2e8f0;color:#94a3b8;cursor:not-allowed}
-.msg{font-size:.84rem;margin-top:.6rem;min-height:1.1rem}.err{color:var(--bad)}.ok{color:var(--ok)}.info{color:var(--mut)}.msg a{color:var(--b)}
-.note{font-size:.74rem;color:var(--mut);text-align:center;margin-top:.7rem}details{margin-top:1.1rem;font-size:.85rem}summary{cursor:pointer;color:var(--mut)}details div{margin-top:.7rem;display:grid;gap:.5rem}
+.msg{font-size:.84rem;margin-top:.6rem;min-height:1.1rem;word-break:break-word}.err{color:var(--bad)}.ok{color:var(--ok)}.info{color:var(--mut)}.msg a{color:var(--b)}
+.note{font-size:.74rem;color:var(--mut);text-align:center;margin-top:.7rem}
 </style></head><body>
 <header><div class="logo"><i></i>Ammora</div><div class="tab">Swap</div>
 <div class="right"><div class="pill"><span class="dot"></span>GIWA <span style="color:var(--mut)">Testnet</span></div><button class="w" id="wbtn">Connect Wallet</button></div></header>
@@ -34,70 +34,51 @@ select,input.t{border:1px solid var(--line);border-radius:8px;padding:.45rem;fon
 <div class="card">
 <div class="th"><div class="av">t</div><div><h1>tAMM <small>tAmm Coin</small><span class="badge">Graduated pool</span></h1>
 <div class="addr">0x10B3…8B06<span id="cp">Copy</span><a href="https://sepolia-explorer.giwa.io/token/0x10B3Cc2fc981277Ada576891CF649D0ABA768B06" target="_blank" rel="noopener">Explorer ↗</a></div></div></div>
-<div class="stats"><div><span>Price</span><b id="s-price">–</b></div><div><span>Network</span><b>GIWA Sepolia</b></div><div><span>Pool model</span><b id="s-model">compounding</b></div></div>
-<details><summary>Pool settings</summary><div>
-<label class="note" style="text-align:left">Pool model</label><select id="model"><option>compounding</option><option>concentrated</option><option>almm</option><option>dbc</option></select>
-<label class="note" style="text-align:left">Pool address</label><input class="t" id="pool" value="0x1EF92A6a9BB4bBed2b385Dd5E688F88e7965BCf8"></div></details>
-<div class="note" style="text-align:left;margin-top:1.1rem">Swaps execute on GIWA Sepolia testnet through the Ammora SDK. Test funds only.</div>
+<div class="stats"><div><span>Price</span><b id="s-price">–</b></div><div><span>Network</span><b>GIWA Sepolia</b></div><div><span>Pool</span><b>Compounding</b></div></div>
+<div class="note" style="text-align:left;margin-top:1.1rem">Swaps execute on GIWA Sepolia testnet through the Ammora router. Test funds only.</div>
 </div>
 <div class="card">
-<div class="tabs"><button class="on" id="t-buy">Buy</button><button id="t-sell">Sell</button></div>
+<div class="tabs"><button class="on" id="t-buy">Buy</button><button id="t-sell" disabled title="Coming soon">Sell</button></div>
 <div class="box"><div class="row"><span>You pay</span><span id="bal">Balance –</span></div>
-<div class="in"><input class="amt" id="amt" placeholder="0" inputmode="decimal"><span class="tok" id="sym-in">ETH</span></div></div>
-<div class="chips" id="chips"></div>
-<div class="box"><div class="row"><span>Estimated output</span></div><div class="in"><div class="est" id="est">0</div><span class="tok" id="sym-out">tAMM</span></div></div>
+<div class="in"><input class="amt" id="amt" placeholder="0" inputmode="decimal"><span class="tok">ETH</span></div></div>
+<div class="chips" id="chips"><button data-a="0.001">0.001</button><button data-a="0.005">0.005</button><button data-a="0.01">0.01</button><button data-a="max">Max</button></div>
+<div class="box"><div class="row"><span>Estimated output</span></div><div class="in"><div class="est" id="est">0</div><span class="tok">tAMM</span></div></div>
 <div class="line"><span>Min. received</span><b id="minr">–</b></div>
-<div class="line"><span>Price impact</span><b id="imp">–</b></div>
 <div class="line"><span>Slippage</span><select id="slip"><option value="50">0.5%</option><option value="100" selected>1%</option><option value="300">3%</option></select></div>
 <button class="go" id="go" disabled>Connect Wallet</button>
 <div class="msg" id="msg"></div>
 <div class="note">Testnet only · transactions require wallet confirmation</div>
 </div></main>
 <script type="module">
-import { AmmoraSwapClient, giwaSepoliaAutoRouteDeploymentCatalog, giwaSepoliaAutoRoutePoolProfiles } from '@ammora-protocol/sdk';
-import { createPublicClient, createWalletClient, custom, defineChain, http, isAddress, parseUnits, formatUnits, erc20Abi } from 'viem';
+import { createPublicClient, createWalletClient, custom, defineChain, http, parseUnits, parseEther, formatUnits, erc20Abi, concat, pad, toHex } from 'viem';
 const $ = (id) => document.getElementById(id);
 const ID = 91342, RPC = 'https://sepolia-rpc.giwa.io', EXP = 'https://sepolia-explorer.giwa.io';
-const WETH = '0x4200000000000000000000000000000000000006', TAMM = '0x10B3Cc2fc981277Ada576891CF649D0ABA768B06', DEAD = '0x000000000000000000000000000000000000dEaD';
+const ROUTER = '0x4FC91b90087288520A7bB4aA7Ab5441bb4E9C496', POOL = '0x1EF92A6a9BB4bBed2b385Dd5E688F88e7965BCf8', TAMM = '0x10B3Cc2fc981277Ada576891CF649D0ABA768B06';
+const SEL = '0xdb73c039', DEAD = '0x000000000000000000000000000000000000dEaD';
 const chain = defineChain({ id: ID, name: 'GIWA Sepolia', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: [RPC] } }, blockExplorers: { default: { name: 'GIWA Explorer', url: EXP } } });
 const pub = createPublicClient({ chain, transport: http(RPC) });
-const D = { ETH: 18, tAMM: 6 };
-let account = null, side = 'buy', balance = 0n, prepared = null, busy = false, seq = 0, timer, quoted = false;
+let account = null, balance = 0n, quote = null, busy = false, seq = 0, timer, quoted = false;
 const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
 const fmt = (v, d, m = 6) => Number(formatUnits(v, d)).toLocaleString(undefined, { maximumFractionDigits: m });
 const msg = (t, c = 'info') => { $('msg').className = 'msg ' + c; $('msg').innerHTML = t; };
-const inSym = () => (side === 'buy' ? 'ETH' : 'tAMM'), outSym = () => (side === 'buy' ? 'tAMM' : 'ETH');
-const swaps = AmmoraSwapClient.create(pub, { deploymentCatalog: giwaSepoliaAutoRouteDeploymentCatalog, factoryProfiles: giwaSepoliaAutoRoutePoolProfiles });
+const err = (e) => String(e?.shortMessage ?? e?.message ?? e).slice(0, 220);
+const deadline = () => BigInt(Math.floor(Date.now() / 1000) + 1200);
+const calldata = (minOut, to, dl) => concat([SEL, pad(POOL, { size: 32 }), pad(toHex(minOut), { size: 32 }), pad(to, { size: 32 }), pad(toHex(dl), { size: 32 }), pad('0x00', { size: 32 })]);
 
-function paint() {
-  $('wbtn').textContent = account ? short(account) : 'Connect Wallet';
-  $('sym-in').textContent = inSym(); $('sym-out').textContent = outSym();
-  $('t-buy').classList.toggle('on', side === 'buy'); $('t-sell').classList.toggle('on', side === 'sell');
-  $('chips').innerHTML = (side === 'buy' ? ['0.001', '0.005', '0.01'] : ['10', '100', '1000']).map((a) => `<button data-a="${a}">${a}</button>`).join('') + '<button data-a="max">Max</button>';
-  $('chips').querySelectorAll('button').forEach((b) => (b.onclick = () => { setMax(b.dataset.a); }));
-  btn();
-}
-function setMax(a) {
-  if (a !== 'max') $('amt').value = a;
-  else { const keep = side === 'buy' ? 2_000_000_000_000_000n : 0n; $('amt').value = formatUnits(balance > keep ? balance - keep : 0n, D[inSym()]); }
-  quoteSoon();
-}
 function btn() {
-  const b = $('go'), amt = Number($('amt').value);
+  const b = $('go'), t = $('amt').value.trim(); let amt = 0n;
+  try { amt = t ? parseUnits(t, 18) : 0n; } catch {}
   b.disabled = false;
   if (busy) { b.disabled = true; return; }
   if (!account) b.textContent = 'Connect Wallet';
-  else if (!amt || amt <= 0) { b.textContent = 'Enter an amount'; b.disabled = true; }
-  else if (!isAddress($('pool').value.trim())) { b.textContent = 'Invalid pool address'; b.disabled = true; }
-  else if (!prepared) { b.textContent = quoted ? 'No quote available' : 'Getting quote…'; b.disabled = true; }
-  else { try { if (parseUnits($('amt').value, D[inSym()]) > balance) { b.textContent = 'Insufficient balance'; b.disabled = true; return; } } catch {} b.textContent = side === 'buy' ? 'Buy tAMM' : 'Sell tAMM'; }
+  else if (amt <= 0n) { b.textContent = 'Enter an amount'; b.disabled = true; }
+  else if (amt > balance) { b.textContent = 'Insufficient balance'; b.disabled = true; }
+  else if (!quote) { b.textContent = quoted ? 'No quote available' : 'Getting quote…'; b.disabled = true; }
+  else b.textContent = 'Buy tAMM';
 }
 async function loadBalance() {
   if (!account) { $('bal').textContent = 'Balance –'; balance = 0n; return btn(); }
-  try {
-    balance = side === 'buy' ? await pub.getBalance({ address: account }) : await pub.readContract({ address: TAMM, abi: erc20Abi, functionName: 'balanceOf', args: [account] });
-    $('bal').textContent = `Balance ${fmt(balance, D[inSym()], 4)} ${inSym()}`;
-  } catch { $('bal').textContent = 'Balance –'; }
+  try { balance = await pub.getBalance({ address: account }); $('bal').textContent = `Balance ${fmt(balance, 18, 4)} ETH`; } catch { $('bal').textContent = 'Balance –'; }
   btn();
 }
 async function ensureChain() {
@@ -108,56 +89,59 @@ async function ensureChain() {
 }
 async function connect() {
   if (!window.ethereum) return msg('No wallet found. Please install MetaMask.', 'err');
-  try { const [a] = await window.ethereum.request({ method: 'eth_requestAccounts' }); await ensureChain(); account = a; msg(''); await loadBalance(); paint(); quoteSoon(); }
-  catch (e) { msg(String(e?.shortMessage ?? e?.message ?? e).slice(0, 140), 'err'); }
+  try { const [a] = await window.ethereum.request({ method: 'eth_requestAccounts' }); await ensureChain(); account = a; $('wbtn').textContent = short(a); msg(''); await loadBalance(); quoteSoon(); }
+  catch (e) { msg(err(e), 'err'); }
 }
-function req(amountIn) {
-  const buy = side === 'buy';
-  return { model: $('model').value, pool: $('pool').value.trim(), tokenIn: buy ? WETH : TAMM, inputAsset: buy ? 'native' : 'erc20', outputAsset: buy ? 'erc20' : 'native',
-    amountIn, payer: account ?? DEAD, recipient: account ?? DEAD, slippageBps: Number($('slip').value), executionMode: 'direct-wallet' };
+async function getOut(amountIn, from) {
+  const r = await pub.call({ account: from, to: ROUTER, data: calldata(1n, from, deadline()), value: amountIn, stateOverride: [{ address: from, balance: parseEther('1000000') }] });
+  if (!r.data || r.data.length < 66) throw new Error('Router returned no output amount');
+  const out = BigInt(r.data.slice(0, 66));
+  if (out <= 0n) throw new Error('Quote is zero');
+  return out;
 }
-function quoteSoon() { clearTimeout(timer); prepared = null; quoted = false; btn(); timer = setTimeout(doQuote, 500); }
+function quoteSoon() { clearTimeout(timer); quote = null; quoted = false; btn(); timer = setTimeout(doQuote, 500); }
 async function doQuote() {
-  const my = ++seq, t = $('amt').value.trim();
-  $('s-model').textContent = $('model').value;
-  if (!t || Number(t) <= 0 || !isAddress($('pool').value.trim())) { $('est').textContent = '0'; $('minr').textContent = '–'; $('imp').textContent = '–'; return btn(); }
+  const my = ++seq, t = $('amt').value.trim(); let amt = 0n;
+  try { amt = t ? parseUnits(t, 18) : 0n; } catch {}
+  if (amt <= 0n) { $('est').textContent = '0'; $('minr').textContent = '–'; return btn(); }
   try {
     $('est').textContent = '…';
-    const p = await (await swaps).prepareExactIn(req(parseUnits(t, D[inSym()])));
+    const out = await getOut(amt, account ?? DEAD);
     if (my !== seq) return;
-    prepared = p; quoted = true; const q = p.quote, od = D[outSym()];
-    $('est').textContent = fmt(q.expectedAmountOut, od);
-    $('minr').textContent = `${fmt(q.minimumAmountOut, od)} ${outSym()}`;
-    $('imp').textContent = q.priceImpactBps == null ? '–' : (Number(q.priceImpactBps) / 100).toFixed(2) + '%';
-    msg('');
-  } catch (e) { if (my !== seq) return; quoted = true; $('est').textContent = '0'; msg(String(e?.shortMessage ?? e?.message ?? e).slice(0, 220), 'err'); }
+    const min = (out * BigInt(10000 - Number($('slip').value))) / 10000n;
+    quote = { out, min, amt }; quoted = true;
+    $('est').textContent = fmt(out, 6); $('minr').textContent = `${fmt(min, 6)} tAMM`; msg('');
+  } catch (e) { if (my !== seq) return; quoted = true; $('est').textContent = '0'; $('minr').textContent = '–'; msg(err(e), 'err'); }
   btn();
 }
-const status = (s) => ({ 'quote-refreshed': 'Quote refreshed…', 'approval-requested': 'Approve tAMM spending in your wallet…', 'approval-submitted': 'Approval submitted…', 'approval-confirmed': 'Approval confirmed.', 'swap-requested': 'Confirm the swap in your wallet…', 'swap-submitted': 'Transaction submitted. Waiting for confirmation…' }[s.type] ?? 'Working…');
 async function swap() {
   if (!account) return connect();
-  if (!prepared) return;
+  if (!quote) return;
   busy = true; btn(); $('go').textContent = 'Processing…';
   try {
     await ensureChain();
     const wallet = createWalletClient({ account, chain, transport: custom(window.ethereum) });
-    const r = await prepared.execute(wallet, { autoRefresh: true, onStatus: (s) => msg(status(s)) });
-    const got = r.amountReceived == null ? '' : ` Received ${fmt(r.amountReceived, D[outSym()])} ${outSym()}.`;
-    msg(`Swap confirmed.${got} <a href="${EXP}/tx/${r.hash}" target="_blank" rel="noopener">View transaction ↗</a>`, 'ok');
-    $('amt').value = ''; $('est').textContent = '0'; prepared = null;
-  } catch (e) { msg(String(e?.shortMessage ?? e?.message ?? e).slice(0, 220), 'err'); }
-  busy = false; await loadBalance(); paint();
+    msg('Confirm the swap in your wallet…');
+    const hash = await wallet.sendTransaction({ account, chain, to: ROUTER, data: calldata(quote.min, account, deadline()), value: quote.amt });
+    msg(`Transaction submitted. Waiting for confirmation… <a href="${EXP}/tx/${hash}" target="_blank" rel="noopener">View ↗</a>`);
+    const rc = await pub.waitForTransactionReceipt({ hash });
+    if (rc.status === 'success') { msg(`Swap confirmed. <a href="${EXP}/tx/${hash}" target="_blank" rel="noopener">View transaction ↗</a>`, 'ok'); $('amt').value = ''; $('est').textContent = '0'; $('minr').textContent = '–'; quote = null; }
+    else msg(`Transaction failed. <a href="${EXP}/tx/${hash}" target="_blank" rel="noopener">View ↗</a>`, 'err');
+  } catch (e) { msg(err(e), 'err'); }
+  busy = false; await loadBalance();
 }
 async function price() {
-  try { const p = await (await swaps).prepareExactIn({ ...req(parseUnits('0.001', 18)), side: undefined, tokenIn: WETH, inputAsset: 'native', outputAsset: 'erc20' });
-    $('s-price').textContent = `1 ETH ≈ ${fmt(p.quote.expectedAmountOut * 1000n, 6, 2)} tAMM`; } catch { $('s-price').textContent = '–'; }
+  try { const out = await getOut(parseEther('0.001'), DEAD); $('s-price').textContent = `1 ETH ≈ ${fmt(out * 1000n, 6, 2)} tAMM`; } catch { $('s-price').textContent = '–'; }
 }
-$('t-buy').onclick = () => { side = 'buy'; $('amt').value = ''; $('est').textContent = '0'; paint(); loadBalance(); quoteSoon(); };
-$('t-sell').onclick = () => { side = 'sell'; $('amt').value = ''; $('est').textContent = '0'; paint(); loadBalance(); quoteSoon(); };
-['amt', 'slip', 'model', 'pool'].forEach((id) => $(id).addEventListener('input', quoteSoon));
+document.querySelectorAll('#chips button').forEach((b) => (b.onclick = () => {
+  if (b.dataset.a === 'max') { const keep = 2_000_000_000_000_000n; $('amt').value = formatUnits(balance > keep ? balance - keep : 0n, 18); }
+  else $('amt').value = b.dataset.a;
+  quoteSoon();
+}));
+$('amt').addEventListener('input', quoteSoon); $('slip').addEventListener('input', quoteSoon);
 $('go').onclick = swap;
-$('wbtn').onclick = () => (account ? ((account = null), loadBalance(), paint()) : connect());
+$('wbtn').onclick = () => { if (account) { account = null; $('wbtn').textContent = 'Connect Wallet'; loadBalance(); quoteSoon(); } else connect(); };
 $('cp').onclick = () => { navigator.clipboard?.writeText(TAMM); $('cp').textContent = 'Copied'; setTimeout(() => ($('cp').textContent = 'Copy'), 1200); };
-window.ethereum?.on?.('accountsChanged', (a) => { account = a[0] ?? null; loadBalance(); paint(); quoteSoon(); });
-paint(); price();
+window.ethereum?.on?.('accountsChanged', (a) => { account = a[0] ?? null; $('wbtn').textContent = account ? short(account) : 'Connect Wallet'; loadBalance(); quoteSoon(); });
+btn(); price();
 </script></body></html>
