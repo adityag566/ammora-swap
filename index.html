@@ -17,7 +17,7 @@ main{max-width:1040px;margin:1.5rem auto;padding:0 1rem;display:grid;grid-templa
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.3rem}@media(max-width:560px){.stats{grid-template-columns:1fr 1fr}}
 .stats span{font-size:.75rem;color:var(--mut)}.stats b{display:block;font-size:1.1rem;margin-top:.2rem}
 .tabs{display:grid;grid-template-columns:1fr 1fr;background:#eef2f8;border-radius:12px;padding:4px;margin-bottom:1rem}
-.tabs button{border:0;background:none;padding:.65rem;border-radius:9px;font-weight:700;color:var(--mut);cursor:pointer;font-size:.95rem}.tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px #0001}.tabs button:disabled{opacity:.5;cursor:not-allowed}
+.tabs button{border:0;background:none;padding:.65rem;border-radius:9px;font-weight:700;color:var(--mut);cursor:pointer;font-size:.95rem}.tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px #0001}
 .box{border:1px solid var(--line);border-radius:14px;padding:1rem;background:#fafbfd;margin-bottom:.7rem}.row{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:var(--mut)}
 .in{display:flex;justify-content:space-between;align-items:center;gap:.5rem}.amt{border:0;background:none;font-size:1.9rem;font-weight:700;width:100%;padding:.35rem 0;outline:0;color:var(--text)}.est{font-size:1.9rem;font-weight:700;padding:.35rem 0;color:var(--text)}
 .tok{font-weight:700;background:#fff;border:1px solid var(--line);border-radius:99px;padding:.4rem .85rem;white-space:nowrap}
@@ -38,11 +38,11 @@ select{border:1px solid var(--line);border-radius:8px;padding:.45rem;font-size:.
 <div class="note" style="text-align:left;margin-top:1.1rem">Swaps execute on GIWA Sepolia testnet through the Ammora router. Test funds only.</div>
 </div>
 <div class="card">
-<div class="tabs"><button class="on" id="t-buy">Buy</button><button id="t-sell" disabled title="Coming soon">Sell</button></div>
+<div class="tabs"><button class="on" id="t-buy">Buy</button><button id="t-sell">Sell</button></div>
 <div class="box"><div class="row"><span>You pay</span><span id="bal">Balance –</span></div>
-<div class="in"><input class="amt" id="amt" placeholder="0" inputmode="decimal"><span class="tok">ETH</span></div></div>
-<div class="chips" id="chips"><button data-a="0.001">0.001</button><button data-a="0.005">0.005</button><button data-a="0.01">0.01</button><button data-a="max">Max</button></div>
-<div class="box"><div class="row"><span>Estimated output</span></div><div class="in"><div class="est" id="est">0</div><span class="tok">tAMM</span></div></div>
+<div class="in"><input class="amt" id="amt" placeholder="0" inputmode="decimal"><span class="tok" id="sym-in">ETH</span></div></div>
+<div class="chips" id="chips"></div>
+<div class="box"><div class="row"><span id="est-label">Estimated output</span></div><div class="in"><div class="est" id="est">0</div><span class="tok" id="sym-out">tAMM</span></div></div>
 <div class="line"><span>Min. received</span><b id="minr">–</b></div>
 <div class="line"><span>Slippage</span><select id="slip"><option value="50">0.5%</option><option value="100" selected>1%</option><option value="300">3%</option></select></div>
 <button class="go" id="go" disabled>Connect Wallet</button>
@@ -54,31 +54,51 @@ import { createPublicClient, createWalletClient, custom, defineChain, http, pars
 const $ = (id) => document.getElementById(id);
 const ID = 91342, RPC = 'https://sepolia-rpc.giwa.io', EXP = 'https://sepolia-explorer.giwa.io';
 const ROUTER = '0x4FC91b90087288520A7bB4aA7Ab5441bb4E9C496', POOL = '0x1EF92A6a9BB4bBed2b385Dd5E688F88e7965BCf8', TAMM = '0x10B3Cc2fc981277Ada576891CF649D0ABA768B06';
-const SEL = '0xdb73c039', DEAD = '0x000000000000000000000000000000000000dEaD';
+const SEL_BUY = '0xdb73c039', SEL_SELL = '0xdfecc67d', DEAD = '0x000000000000000000000000000000000000dEaD';
 const chain = defineChain({ id: ID, name: 'GIWA Sepolia', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: [RPC] } }, blockExplorers: { default: { name: 'GIWA Explorer', url: EXP } } });
 const pub = createPublicClient({ chain, transport: http(RPC) });
-let account = null, balance = 0n, quote = null, busy = false, seq = 0, timer, quoted = false;
+let account = null, side = 'buy', balance = 0n, quote = null, busy = false, seq = 0, timer, quoted = false, rate = null;
+const inSym = () => (side === 'buy' ? 'ETH' : 'tAMM'), outSym = () => (side === 'buy' ? 'tAMM' : 'ETH');
+const inDec = () => (side === 'buy' ? 18 : 6), outDec = () => (side === 'buy' ? 6 : 18);
 const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
 const fmt = (v, d, m = 6) => Number(formatUnits(v, d)).toLocaleString(undefined, { maximumFractionDigits: m });
 const msg = (t, c = 'info') => { $('msg').className = 'msg ' + c; $('msg').innerHTML = t; };
 const err = (e) => String(e?.shortMessage ?? e?.message ?? e).slice(0, 220);
 const deadline = () => BigInt(Math.floor(Date.now() / 1000) + 1200);
-const calldata = (minOut, to, dl) => concat([SEL, pad(POOL, { size: 32 }), pad(toHex(minOut), { size: 32 }), pad(to, { size: 32 }), pad(toHex(dl), { size: 32 }), pad('0x00', { size: 32 })]);
+const word = (v) => pad(typeof v === 'bigint' ? toHex(v) : v, { size: 32 });
+const buyData = (minOut, to, dl) => concat([SEL_BUY, word(POOL), word(minOut), word(to), word(dl), word(0n)]);
+const sellData = (amt, minOut, to, dl) => concat([SEL_SELL, word(POOL), word(TAMM), word(amt), word(minOut), word(to), word(dl), word(0n)]);
+const parseIn = (t) => { try { return t ? parseUnits(t, inDec()) : 0n; } catch { return 0n; } };
+const slipBps = () => BigInt(10000 - Number($('slip').value));
 
+function paint() {
+  $('sym-in').textContent = inSym(); $('sym-out').textContent = outSym();
+  $('t-buy').classList.toggle('on', side === 'buy'); $('t-sell').classList.toggle('on', side === 'sell');
+  $('est-label').textContent = side === 'buy' ? 'Estimated output' : 'Estimated output (approx.)';
+  $('chips').innerHTML = (side === 'buy' ? ['0.001', '0.005', '0.01'] : ['0.1', '1', '10']).map((a) => `<button data-a="${a}">${a}</button>`).join('') + '<button data-a="max">Max</button>';
+  $('chips').querySelectorAll('button').forEach((b) => (b.onclick = () => {
+    if (b.dataset.a === 'max') { const keep = side === 'buy' ? 2_000_000_000_000_000n : 0n; $('amt').value = formatUnits(balance > keep ? balance - keep : 0n, inDec()); }
+    else $('amt').value = b.dataset.a;
+    quoteSoon();
+  }));
+  btn();
+}
 function btn() {
-  const b = $('go'), t = $('amt').value.trim(); let amt = 0n;
-  try { amt = t ? parseUnits(t, 18) : 0n; } catch {}
+  const b = $('go'), amt = parseIn($('amt').value.trim());
   b.disabled = false;
   if (busy) { b.disabled = true; return; }
   if (!account) b.textContent = 'Connect Wallet';
   else if (amt <= 0n) { b.textContent = 'Enter an amount'; b.disabled = true; }
   else if (amt > balance) { b.textContent = 'Insufficient balance'; b.disabled = true; }
   else if (!quote) { b.textContent = quoted ? 'No quote available' : 'Getting quote…'; b.disabled = true; }
-  else b.textContent = 'Buy tAMM';
+  else b.textContent = side === 'buy' ? 'Buy tAMM' : 'Sell tAMM';
 }
 async function loadBalance() {
   if (!account) { $('bal').textContent = 'Balance –'; balance = 0n; return btn(); }
-  try { balance = await pub.getBalance({ address: account }); $('bal').textContent = `Balance ${fmt(balance, 18, 4)} ETH`; } catch { $('bal').textContent = 'Balance –'; }
+  try {
+    balance = side === 'buy' ? await pub.getBalance({ address: account }) : await pub.readContract({ address: TAMM, abi: erc20Abi, functionName: 'balanceOf', args: [account] });
+    $('bal').textContent = `Balance ${fmt(balance, inDec(), 4)} ${inSym()}`;
+  } catch { $('bal').textContent = 'Balance –'; }
   btn();
 }
 async function ensureChain() {
@@ -92,25 +112,36 @@ async function connect() {
   try { const [a] = await window.ethereum.request({ method: 'eth_requestAccounts' }); await ensureChain(); account = a; $('wbtn').textContent = short(a); msg(''); await loadBalance(); quoteSoon(); }
   catch (e) { msg(err(e), 'err'); }
 }
-async function getOut(amountIn, from) {
-  const r = await pub.call({ account: from, to: ROUTER, data: calldata(1n, from, deadline()), value: amountIn, stateOverride: [{ address: from, balance: parseEther('1000000') }] });
+const readOut = (r) => {
   if (!r.data || r.data.length < 66) throw new Error('Router returned no output amount');
   const out = BigInt(r.data.slice(0, 66));
   if (out <= 0n) throw new Error('Quote is zero');
   return out;
+};
+async function getBuyOut(amountIn, from) {
+  return readOut(await pub.call({ account: from, to: ROUTER, data: buyData(1n, from, deadline()), value: amountIn, stateOverride: [{ address: from, balance: parseEther('1000000') }] }));
+}
+async function getSellOut(amt, from) {
+  return readOut(await pub.call({ account: from, to: ROUTER, data: sellData(amt, 1n, from, deadline()) }));
 }
 function quoteSoon() { clearTimeout(timer); quote = null; quoted = false; btn(); timer = setTimeout(doQuote, 500); }
 async function doQuote() {
-  const my = ++seq, t = $('amt').value.trim(); let amt = 0n;
-  try { amt = t ? parseUnits(t, 18) : 0n; } catch {}
+  const my = ++seq, amt = parseIn($('amt').value.trim());
   if (amt <= 0n) { $('est').textContent = '0'; $('minr').textContent = '–'; return btn(); }
   try {
     $('est').textContent = '…';
-    const out = await getOut(amt, account ?? DEAD);
+    let out;
+    if (side === 'buy') out = await getBuyOut(amt, account ?? DEAD);
+    else {
+      if (!rate) rate = await getBuyOut(parseEther('0.001'), DEAD);
+      out = (amt * parseEther('0.001')) / rate;
+      if (out <= 0n) throw new Error('Amount too small');
+    }
     if (my !== seq) return;
-    const min = (out * BigInt(10000 - Number($('slip').value))) / 10000n;
+    const min = (out * slipBps()) / 10000n;
     quote = { out, min, amt }; quoted = true;
-    $('est').textContent = fmt(out, 6); $('minr').textContent = `${fmt(min, 6)} tAMM`; msg('');
+    $('est').textContent = (side === 'sell' ? '≈ ' : '') + fmt(out, outDec());
+    $('minr').textContent = `${fmt(min, outDec())} ${outSym()}`; msg('');
   } catch (e) { if (my !== seq) return; quoted = true; $('est').textContent = '0'; $('minr').textContent = '–'; msg(err(e), 'err'); }
   btn();
 }
@@ -121,8 +152,24 @@ async function swap() {
   try {
     await ensureChain();
     const wallet = createWalletClient({ account, chain, transport: custom(window.ethereum) });
-    msg('Confirm the swap in your wallet…');
-    const hash = await wallet.sendTransaction({ account, chain, to: ROUTER, data: calldata(quote.min, account, deadline()), value: quote.amt });
+    let hash;
+    if (side === 'buy') {
+      msg('Confirm the swap in your wallet…');
+      hash = await wallet.sendTransaction({ account, chain, to: ROUTER, data: buyData(quote.min, account, deadline()), value: quote.amt });
+    } else {
+      const allowance = await pub.readContract({ address: TAMM, abi: erc20Abi, functionName: 'allowance', args: [account, ROUTER] });
+      if (allowance < quote.amt) {
+        msg('Approve tAMM spending in your wallet…');
+        const ah = await wallet.writeContract({ account, chain, address: TAMM, abi: erc20Abi, functionName: 'approve', args: [ROUTER, quote.amt] });
+        msg('Approval submitted. Waiting for confirmation…');
+        const ar = await pub.waitForTransactionReceipt({ hash: ah });
+        if (ar.status !== 'success') throw new Error('Approval failed');
+      }
+      const exact = await getSellOut(quote.amt, account);
+      const min = (exact * slipBps()) / 10000n;
+      msg('Confirm the swap in your wallet…');
+      hash = await wallet.sendTransaction({ account, chain, to: ROUTER, data: sellData(quote.amt, min, account, deadline()) });
+    }
     msg(`Transaction submitted. Waiting for confirmation… <a href="${EXP}/tx/${hash}" target="_blank" rel="noopener">View ↗</a>`);
     const rc = await pub.waitForTransactionReceipt({ hash });
     if (rc.status === 'success') { msg(`Swap confirmed. <a href="${EXP}/tx/${hash}" target="_blank" rel="noopener">View transaction ↗</a>`, 'ok'); $('amt').value = ''; $('est').textContent = '0'; $('minr').textContent = '–'; quote = null; }
@@ -131,17 +178,14 @@ async function swap() {
   busy = false; await loadBalance();
 }
 async function price() {
-  try { const out = await getOut(parseEther('0.001'), DEAD); $('s-price').textContent = `1 ETH ≈ ${fmt(out * 1000n, 6, 2)} tAMM`; } catch { $('s-price').textContent = '–'; }
+  try { rate = await getBuyOut(parseEther('0.001'), DEAD); $('s-price').textContent = `1 ETH ≈ ${fmt(rate * 1000n, 6, 2)} tAMM`; } catch { $('s-price').textContent = '–'; }
 }
-document.querySelectorAll('#chips button').forEach((b) => (b.onclick = () => {
-  if (b.dataset.a === 'max') { const keep = 2_000_000_000_000_000n; $('amt').value = formatUnits(balance > keep ? balance - keep : 0n, 18); }
-  else $('amt').value = b.dataset.a;
-  quoteSoon();
-}));
+function setSide(s) { side = s; $('amt').value = ''; $('est').textContent = '0'; $('minr').textContent = '–'; quote = null; msg(''); paint(); loadBalance(); }
+$('t-buy').onclick = () => setSide('buy'); $('t-sell').onclick = () => setSide('sell');
 $('amt').addEventListener('input', quoteSoon); $('slip').addEventListener('input', quoteSoon);
 $('go').onclick = swap;
 $('wbtn').onclick = () => { if (account) { account = null; $('wbtn').textContent = 'Connect Wallet'; loadBalance(); quoteSoon(); } else connect(); };
 $('cp').onclick = () => { navigator.clipboard?.writeText(TAMM); $('cp').textContent = 'Copied'; setTimeout(() => ($('cp').textContent = 'Copy'), 1200); };
 window.ethereum?.on?.('accountsChanged', (a) => { account = a[0] ?? null; $('wbtn').textContent = account ? short(account) : 'Connect Wallet'; loadBalance(); quoteSoon(); });
-btn(); price();
+paint(); price();
 </script></body></html>
