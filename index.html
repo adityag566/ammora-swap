@@ -34,10 +34,10 @@ select,input.t{border:1px solid var(--line);border-radius:8px;padding:.45rem;fon
 <div class="card">
 <div class="th"><div class="av">t</div><div><h1>tAMM <small>tAmm Coin</small><span class="badge">Graduated pool</span></h1>
 <div class="addr">0x10B3…8B06<span id="cp">Copy</span><a href="https://sepolia-explorer.giwa.io/token/0x10B3Cc2fc981277Ada576891CF649D0ABA768B06" target="_blank" rel="noopener">Explorer ↗</a></div></div></div>
-<div class="stats"><div><span>Price</span><b id="s-price">–</b></div><div><span>Network</span><b>GIWA Sepolia</b></div><div><span>Pool model</span><b id="s-model">concentrated</b></div></div>
+<div class="stats"><div><span>Price</span><b id="s-price">–</b></div><div><span>Network</span><b>GIWA Sepolia</b></div><div><span>Pool model</span><b id="s-model">compounding</b></div></div>
 <details><summary>Pool settings</summary><div>
-<label class="note" style="text-align:left">Pool model</label><select id="model"><option>concentrated</option><option>compounding</option><option>almm</option><option>dbc</option></select>
-<label class="note" style="text-align:left">Pool address</label><input class="t" id="pool" value="0x4B0ECA4f5F1bC29B0A990082608649ed421D2CBa"></div></details>
+<label class="note" style="text-align:left">Pool model</label><select id="model"><option>compounding</option><option>concentrated</option><option>almm</option><option>dbc</option></select>
+<label class="note" style="text-align:left">Pool address</label><input class="t" id="pool" value="0x1EF92A6a9BB4bBed2b385Dd5E688F88e7965BCf8"></div></details>
 <div class="note" style="text-align:left;margin-top:1.1rem">Swaps execute on GIWA Sepolia testnet through the Ammora SDK. Test funds only.</div>
 </div>
 <div class="card">
@@ -54,7 +54,7 @@ select,input.t{border:1px solid var(--line);border-radius:8px;padding:.45rem;fon
 <div class="note">Testnet only · transactions require wallet confirmation</div>
 </div></main>
 <script type="module">
-import { AmmoraSwapClient, ammoraDeployments } from '@ammora-protocol/sdk';
+import { AmmoraSwapClient, giwaSepoliaAutoRouteDeploymentCatalog, giwaSepoliaAutoRoutePoolProfiles } from '@ammora-protocol/sdk';
 import { createPublicClient, createWalletClient, custom, defineChain, http, isAddress, parseUnits, formatUnits, erc20Abi } from 'viem';
 const $ = (id) => document.getElementById(id);
 const ID = 91342, RPC = 'https://sepolia-rpc.giwa.io', EXP = 'https://sepolia-explorer.giwa.io';
@@ -67,7 +67,7 @@ const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
 const fmt = (v, d, m = 6) => Number(formatUnits(v, d)).toLocaleString(undefined, { maximumFractionDigits: m });
 const msg = (t, c = 'info') => { $('msg').className = 'msg ' + c; $('msg').innerHTML = t; };
 const inSym = () => (side === 'buy' ? 'ETH' : 'tAMM'), outSym = () => (side === 'buy' ? 'tAMM' : 'ETH');
-const swaps = AmmoraSwapClient.create(pub, { deploymentCatalog: { [ID]: ammoraDeployments[ID] } });
+const swaps = AmmoraSwapClient.create(pub, { deploymentCatalog: giwaSepoliaAutoRouteDeploymentCatalog, factoryProfiles: giwaSepoliaAutoRoutePoolProfiles });
 
 function paint() {
   $('wbtn').textContent = account ? short(account) : 'Connect Wallet';
